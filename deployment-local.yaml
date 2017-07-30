@@ -1,0 +1,29 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: billing-service-deployment-poc
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: app.py
+    spec:
+      containers:
+      - name: billing-service-container
+        image: billing-service-poc:v3
+        ports:
+        - containerPort: 5000
+        env:
+        - name: FLASK_APP
+          value: "app.py"
+        - name: DB_HOST
+          value: "192.168.64.2"
+        - name: DB_PORT
+          value: "32639"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "auvLecfk9X"
+        - name: DB_NAME
+          value: "analytics"
