@@ -1,19 +1,29 @@
 import json
 
-from flask import Flask
-from flask import make_response, Response
+import os
 
-from database import get_database_connection
+from flask import Flask
+from flask import make_response, Response, jsonify
+
+from database import Database
 app = Flask(__name__)
 
-database_connection = get_database_connection()
+db_config = {
+    "DB_HOST" : os.environ['DB_HOST'],
+    "DB_PORT" : os.environ['DB_PORT'],
+    "DB_USER" : os.environ['DB_USER'],
+    "DB_PASSWORD" : os.environ['DB_PASSWORD'],
+    "DB_NAME" : os.environ['DB_NAME']
+}
+
+database_connection = Database.get_connection(db_config)
 
 @app.route('/health')
 def route_health_check():
-    return make_response('alive')
+    return jsonify({"status": "alive"})
 
 get_transaction_metrics_template = (
-    "SELECT sub_key, timestamp, period, publish_transactions "
+    "SELECT * "
     "FROM transaction_metrics "
     "WHERE sub_key = '%s';"
 )
@@ -22,19 +32,11 @@ get_transaction_metrics_template = (
 @app.route('/transaction_metrics/<sub_key>', methods=['GET'])
 def route_get_transaction_metrics(sub_key):
     sql = get_transaction_metrics_template % (sub_key)
-    print "The sql is:"
-    print sql
     cursor = database_connection.cursor()
     cursor.execute(sql)
     result = []
-    for (sub_key, timestamp, period, publish_transactions) in cursor:
-        result.append({
-            "sub_key": sub_key,
-            "timestamp": timestamp,
-            "period": period,
-            "publish_transactions": publish_transactions
-        })
+    for row in cursor:
+        result.append(row)
     cursor.close()
-    flask_response = Response(json.dumps(result) + "\n", status=200, mimetype='application/json')
-    return flask_response
+    return jsonify(result)
     
